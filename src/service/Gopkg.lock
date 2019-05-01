@@ -20,10 +20,10 @@
   revision = "5545eab6dad3bbbd6c5ae9186383c2a9d23c0dae"
 
 [[projects]]
+  branch = "master"
   name = "github.com/gin-gonic/gin"
-  packages = [".","binding","json","render"]
-  revision = "b869fe1415e4b9eb52f247441830d502aece2d4d"
-  version = "v1.3.0"
+  packages = [".","binding","internal/json","render"]
+  revision = "202f8fc58af47ab5c8e834662ee7fc46deacc37d"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -88,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fb2caa1f4a22b1dfb453829bd65b6909f88dc1e8c76bbd4d971d59497ff7197c"
+  inputs-digest = "2a9f3ca8a9facd5096ac1a2f9a7d44ef3675869ee15579a40c3f5b9cd75ea951"
   solver-name = "gps-cdcl"
   solver-version = 1
