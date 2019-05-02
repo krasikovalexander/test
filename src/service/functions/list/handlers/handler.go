@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"service/common"
@@ -12,19 +11,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type FlightItem struct {
-	Flight  *common.Flight
-	Pricing *common.Pricing
+type route struct {
+	Flights []*flightItem `json:"flights"`
 }
 
-func (f *FlightItem) IsAccessibleFrom(from interface{}) bool {
-	return (from.(*FlightItem)).Flight.ArrivalTimeStamp.Before(f.Flight.DepartureTimeStamp.Time) //TBD: add some threshod?
+type flightItem struct {
+	Flight  *common.Flight  `json:"flight"`
+	Pricing *common.Pricing `json:"pricing"`
 }
 
-func (f *FlightItem) Cost() float32 {
+func (f *flightItem) IsAccessibleFrom(from interface{}) bool {
+	return (from.(*flightItem)).Flight.ArrivalTimeStamp.Before(f.Flight.DepartureTimeStamp.Time) //TBD: add some time reserve?
+}
+
+func (f *flightItem) Cost() float32 {
 	return 0
 }
 
+//Handle api call handler. Consumes multipart/form-data, produces json
 func Handle(c *gin.Context) {
 	var req common.SingleDataRequest
 
@@ -42,14 +46,14 @@ func Handle(c *gin.Context) {
 		return
 	}
 
-	var flights []FlightItem
+	var flights []flightItem
 	nodes := make(map[string]bool)
 
 	for p, f := range data.PricedItineraries.Flights {
 		for _, items := range []common.PricedItinerary{f.OnwardPricedItinerary, f.ReturnPricedItinerary} {
 
 			for idx, flight := range items.Flights.Flight {
-				flights = append(flights, FlightItem{
+				flights = append(flights, flightItem{
 					Flight:  &items.Flights.Flight[idx],
 					Pricing: &data.PricedItineraries.Flights[p].Pricing,
 				})
@@ -68,23 +72,34 @@ func Handle(c *gin.Context) {
 		g.AddEdge(item.Flight.Source, item.Flight.Destination, &flights[idx])
 	}
 
-	routes := g.GetPaths(req.Source, req.Destination, req.MaxFlightsInRoute)
-	fmt.Printf("Got %d routes", len(routes))
+	paths := g.GetPaths(req.Source, req.Destination, req.MaxFlightsInRoute)
+	var routes []route
+
+	for _, p := range paths {
+		var flights []*flightItem
+		edges := p.Edges()
+		for _, edge := range edges {
+			flights = append(flights, edge.(*flightItem))
+		}
+		routes = append(routes, route{Flights: flights})
+	}
+
+	/*fmt.Printf("Got %d paths", len(paths))
 	fmt.Println()
-	for idx, r := range routes {
+	for idx, r := range paths {
 		if idx >= 0 {
 			edges := r.Edges()
 			fmt.Printf("Got %d edges in route %d", len(edges), idx)
 			fmt.Println()
 			for _, edge := range edges {
-				edge := edge.(*FlightItem)
+				edge := edge.(*flightItem)
 				fl := edge.Flight
-				fmt.Printf("%s: %s (%s) ==> %s (%s)", fl.Carrier.Name, fl.Source, fl.DepartureTimeStamp, fl.Destination, fl.ArrivalTimeStamp)
+				fmt.Printf("%s [%s]: %s (%s) ==> %s (%s)", fl.Carrier.Name, fl.FlightNumber, fl.Source, fl.DepartureTimeStamp, fl.Destination, fl.ArrivalTimeStamp)
 				fmt.Println()
 			}
 			fmt.Println()
 		}
-	}
+	}*/
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "list handler"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "routes": routes})
 }

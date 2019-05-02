@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+//Graph is a data struct to store ordered weighted graph with arbitrary node labels
 type Graph struct {
 	numNodes          int
 	edges             [][]edge
@@ -12,6 +13,7 @@ type Graph struct {
 	reverseNodeLabels []string
 }
 
+//Edge interface for edge value
 type Edge interface {
 	IsAccessibleFrom(edge interface{}) bool
 	Cost() float32
@@ -23,10 +25,12 @@ type edge struct {
 	value Edge
 }
 
+//Path represent slice of edges
 type Path struct {
 	edges []edge
 }
 
+//Edges get values of path edges
 func (p *Path) Edges() []Edge {
 	var edges []Edge
 	for _, edge := range p.edges {
@@ -35,6 +39,7 @@ func (p *Path) Edges() []Edge {
 	return edges
 }
 
+//NewGraph creates graph with number of nodes required
 func NewGraph(n int) *Graph {
 	return &Graph{
 		numNodes:          n,
@@ -44,6 +49,7 @@ func NewGraph(n int) *Graph {
 	}
 }
 
+//AddEdge adds edges to graph. Creates nodes if they don't exist.
 func (g *Graph) AddEdge(from string, to string, value Edge) {
 	if from == to {
 		return
@@ -66,6 +72,7 @@ func (g *Graph) AddEdge(from string, to string, value Edge) {
 	g.edges[u] = append(g.edges[u], edge{from: u, to: v, value: value})
 }
 
+//GetPaths search paths between two nodes. Pass limit greater than zero to set maximim path length
 func (g *Graph) GetPaths(from string, to string, limit int) []Path {
 	var result []Path
 
@@ -86,6 +93,7 @@ func (g *Graph) GetPaths(from string, to string, limit int) []Path {
 	return result
 }
 
+//BFS variation
 func (g *Graph) getPaths(from int, to int, limit int) [][]edge {
 
 	type queueItem struct {
@@ -115,14 +123,16 @@ func (g *Graph) getPaths(from int, to int, limit int) [][]edge {
 		queue.Remove(next)
 
 		item := next.Value.(queueItem)
+
+		pathLength := len(item.path)
+		if pathLength == 0 || (limit > 0 && pathLength == limit) {
+			continue
+		}
+
 		currentEdge := &item.path[len(item.path)-1]
 
 		if currentEdge.to == to {
 			paths = append(paths, item.path)
-			continue
-		}
-
-		if limit > 0 && len(item.path) == limit {
 			continue
 		}
 
@@ -140,6 +150,7 @@ func (g *Graph) getPaths(from int, to int, limit int) [][]edge {
 	return paths
 }
 
+//Print output simple debug info
 func (g *Graph) Print() {
 	fmt.Println(g.numNodes)
 	fmt.Println(g.nodeLabels)

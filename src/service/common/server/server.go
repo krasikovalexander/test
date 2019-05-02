@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//Start running server based on env PLATFORM
 func Start(engine *gin.Engine) {
 	address := ":3000"
 	platform := os.Getenv("PLATFORM")
