@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	router := gin.New()
+	router := gin.Default()
 	router.POST("/rank", handlers.Handle)
 
 	server.Start(router)
