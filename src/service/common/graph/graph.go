@@ -5,18 +5,22 @@ import (
 	"fmt"
 )
 
-//Graph is a data struct to store ordered weighted graph with arbitrary node labels
+//Graph is a data struct to store ordered graph with arbitrary node labels
 type Graph struct {
-	numNodes          int
-	edges             [][]edge
-	nodeLabels        map[string]int
-	reverseNodeLabels []string
+	numNodes   int
+	edges      [][]edge
+	nodeLabels map[string]int
 }
 
 //Edge interface for edge value
 type Edge interface {
 	IsAccessibleFrom(edge interface{}) bool
-	Cost() float32
+}
+
+//OptimalCriterion is an interface for optimization criterion
+type OptimalCriterion interface {
+	Apply(path *Path)
+	GetResult() []*Path
 }
 
 type edge struct {
@@ -42,10 +46,9 @@ func (p *Path) Edges() []Edge {
 //NewGraph creates graph with number of nodes required
 func NewGraph(n int) *Graph {
 	return &Graph{
-		numNodes:          n,
-		edges:             make([][]edge, n),
-		nodeLabels:        make(map[string]int),
-		reverseNodeLabels: make([]string, n),
+		numNodes:   n,
+		edges:      make([][]edge, n),
+		nodeLabels: make(map[string]int),
 	}
 }
 
@@ -59,14 +62,12 @@ func (g *Graph) AddEdge(from string, to string, value Edge) {
 	if !exist {
 		u = len(g.nodeLabels)
 		g.nodeLabels[from] = u
-		g.reverseNodeLabels[u] = from
 	}
 
 	v, exist := g.nodeLabels[to]
 	if !exist {
 		v = len(g.nodeLabels)
 		g.nodeLabels[to] = v
-		g.reverseNodeLabels[v] = to
 	}
 
 	g.edges[u] = append(g.edges[u], edge{from: u, to: v, value: value})
@@ -93,7 +94,7 @@ func (g *Graph) GetPaths(from string, to string, limit int) []Path {
 	return result
 }
 
-//BFS variation
+//based on BFS algorithm
 func (g *Graph) getPaths(from int, to int, limit int) [][]edge {
 
 	type queueItem struct {
@@ -154,6 +155,71 @@ func (g *Graph) getPaths(from int, to int, limit int) [][]edge {
 func (g *Graph) Print() {
 	fmt.Println(g.numNodes)
 	fmt.Println(g.nodeLabels)
-	fmt.Println(g.reverseNodeLabels)
 	fmt.Println(g.edges)
+}
+
+//SearchOptimalPaths search optimal paths between two nodes by given criteria
+func (g *Graph) SearchOptimalPaths(from string, to string, limit int, criteria ...OptimalCriterion) {
+	fromIdx, fromExists := g.nodeLabels[from]
+	toIdx, toExists := g.nodeLabels[to]
+
+	if from == to || !fromExists || !toExists {
+		return
+	}
+
+	g.searchOptimalPaths(fromIdx, toIdx, limit, criteria...)
+}
+
+func (g *Graph) searchOptimalPaths(from int, to int, limit int, criteria ...OptimalCriterion) {
+	type queueItem struct {
+		path    []edge
+		visited []bool
+	}
+
+	var path []edge
+	visited := make([]bool, g.numNodes)
+	visited[from] = true
+
+	queue := list.New()
+	for _, edge := range g.edges[from] {
+		queue.PushBack(queueItem{
+			path:    append(path, edge),
+			visited: visited,
+		})
+	}
+
+	for {
+		next := queue.Front()
+		if next == nil {
+			break
+		}
+		queue.Remove(next)
+
+		item := next.Value.(queueItem)
+
+		pathLength := len(item.path)
+		if pathLength == 0 || (limit > 0 && pathLength == limit) {
+			continue
+		}
+
+		currentEdge := &item.path[len(item.path)-1]
+
+		if currentEdge.to == to {
+			for _, criterion := range criteria {
+				criterion.Apply(&Path{edges: item.path})
+			}
+			continue
+		}
+
+		item.visited[currentEdge.to] = true
+
+		for _, edge := range g.edges[currentEdge.to] {
+			if !visited[edge.to] && edge.value.IsAccessibleFrom(currentEdge.value) {
+				queue.PushBack(queueItem{
+					path:    append(item.path, edge),
+					visited: item.visited,
+				})
+			}
+		}
+	}
 }

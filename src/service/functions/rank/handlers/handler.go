@@ -29,22 +29,43 @@ func Handle(c *gin.Context) {
 	}
 
 	g := common.NewFlightsGraph(&data)
-	paths := g.GetPaths(req.Source, req.Destination, req.MaxFlightsInRoute)
 
-	var routes []common.Route
+	minCost := NewMinimumCostCriterion()
+	maxCost := NewMaximumCostCriterion()
+	minTime := NewMinimumTimeCriterion()
+	maxTime := NewMaximumTimeCriterion()
 
-	for _, p := range paths {
-		var flights []*common.FlightItem
-		edges := p.Edges()
-		for _, edge := range edges {
-			flights = append(flights, edge.(*common.FlightItem))
-		}
-		routes = append(routes, common.Route{Flights: flights})
+	g.SearchOptimalPaths(req.Source, req.Destination, req.MaxFlightsInRoute, minCost, maxCost, minTime, maxTime)
+
+	items := map[string]*Criterion{
+		"minCost": minCost,
+		"maxCost": maxCost,
+		"minTime": minTime,
+		"maxTime": maxTime,
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "routes": routes})
+	result := make(map[string]interface{})
 
-	/*fmt.Printf("Got %d paths", len(paths))
+	for key, criterion := range items {
+		var routes []common.Route
+		paths := criterion.GetResult()
+		for _, p := range paths {
+			var flights []*common.FlightItem
+			edges := p.Edges()
+			for _, edge := range edges {
+				flights = append(flights, edge.(*common.FlightItem))
+			}
+			routes = append(routes, common.Route{Flights: flights})
+		}
+		result[key] = routes
+	}
+
+	result["success"] = true
+	c.JSON(http.StatusOK, result)
+
+	/*paths := maxTime.GetResult()
+	fmt.Println(maxTime.Value)
+	fmt.Printf("Got %d paths", len(paths))
 	fmt.Println()
 	for idx, r := range paths {
 		if idx >= 0 {
