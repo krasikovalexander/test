@@ -2,14 +2,24 @@
 
 **Локально:**
 cd src/service
+
 dep ensure
+
 go run main.go
 
 POST http://localhost:3000/list
+
 POST http://localhost:3000/rank
+
 Content-Type: multipart/form-data
 
+
+
 data                  xml file
+
 source                string
+
 destination           string
+
 max_flights_in_route  int [optional]
+
