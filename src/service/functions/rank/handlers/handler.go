@@ -34,14 +34,20 @@ func Handle(c *gin.Context) {
 	maxCost := NewMaximumCostCriterion()
 	minTime := NewMinimumTimeCriterion()
 	maxTime := NewMaximumTimeCriterion()
+	optimal := NewOptimalCriterion(&OptimalCriterionWeights{
+		Time:            2,
+		Cost:            1,
+		NumberOfFlights: 3,
+	})
 
-	g.SearchOptimalPaths(req.Source, req.Destination, req.MaxFlightsInRoute, minCost, maxCost, minTime, maxTime)
+	g.SearchOptimalPaths(req.Source, req.Destination, req.MaxFlightsInRoute, minCost, maxCost, minTime, maxTime, optimal)
 
 	items := map[string]*Criterion{
 		"minCost": minCost,
 		"maxCost": maxCost,
 		"minTime": minTime,
 		"maxTime": maxTime,
+		"optimal": optimal,
 	}
 
 	result := make(map[string]interface{})
