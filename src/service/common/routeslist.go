@@ -51,7 +51,7 @@ func (routesB *RoutesList) Diff(routesA *RoutesList) (additions []Route, removal
 	}(updates)
 
 	wgWorkers := sync.WaitGroup{}
-	wgWorkers.Add(WorkersCount)
+	wgWorkers.Add(RoutesWorkersCount)
 
 	var worker = func(jobs <-chan comparePair, updates chan<- RouteUpdate) {
 		defer wgWorkers.Done()
@@ -63,7 +63,7 @@ func (routesB *RoutesList) Diff(routesA *RoutesList) (additions []Route, removal
 		}
 	}
 
-	for w := 0; w < WorkersCount; w++ {
+	for w := 0; w < RoutesWorkersCount; w++ {
 		go worker(jobs, updates)
 	}
 
