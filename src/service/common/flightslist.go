@@ -47,23 +47,24 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 	jobs := make(chan comparePair)
 	updates := make(chan FlightUpdate)
 
-	wgResults := sync.WaitGroup{}
-	wgResults.Add(1)
-	go func() {
-		defer wgResults.Done()
+	wgUpdates := sync.WaitGroup{}
+	wgUpdates.Add(1)
+
+	go func(updates <-chan FlightUpdate) {
+		defer wgUpdates.Done()
 		for result := range updates {
 			modifications = append(modifications, result)
 		}
-	}()
+	}(updates)
 
 	wgWorkers := sync.WaitGroup{}
 	wgWorkers.Add(WorkersCount)
 
-	var worker = func(jobs <-chan comparePair, results chan<- FlightUpdate) {
+	var worker = func(jobs <-chan comparePair, updates chan<- FlightUpdate) {
 		defer wgWorkers.Done()
 		for compare := range jobs {
 			changelog, _ := diff.Diff(compare.flightA, compare.flightB)
-			results <- FlightUpdate{compare.flightA, changelog}
+			updates <- FlightUpdate{compare.flightA, changelog}
 		}
 	}
 
@@ -85,7 +86,7 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 	close(jobs)
 	wgWorkers.Wait()
 	close(updates)
-	wgResults.Wait()
+	wgUpdates.Wait()
 
 	for _, flightB := range flightsB.flightItems {
 		if _, exist := flightsA.flightItems[flightB.Flight.Key()]; !exist {
