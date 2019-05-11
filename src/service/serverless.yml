@@ -31,6 +31,15 @@ functions:
           method: post
     environment:
       PLATFORM: aws_lambda
+  
+  compare_routes:
+    handler: bin/compare-routes
+    events:
+      - http:
+          path: compare/routes
+          method: post
+    environment:
+      PLATFORM: aws_lambda
 
   rank:
     handler: bin/rank

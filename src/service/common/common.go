@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/xml"
+	"fmt"
 	"mime/multipart"
 	"service/common/graph"
 	"time"
@@ -13,6 +14,22 @@ type SingleDataRequest struct {
 	Source            string                `form:"source" binding:"required"`
 	Destination       string                `form:"destination" binding:"required"`
 	MaxFlightsInRoute int                   `form:"max_flights_in_route"`
+}
+
+//CompareDataRequest is a multipart/form-data binding
+type CompareDataRequest struct {
+	DataA *multipart.FileHeader `form:"data_a" binding:"required"`
+	DataB *multipart.FileHeader `form:"data_b" binding:"required"`
+}
+
+//CompareRoutesDataRequest is a multipart/form-data binding
+type CompareRoutesDataRequest struct {
+	DataA *multipart.FileHeader `form:"data_a" binding:"required"`
+	DataB *multipart.FileHeader `form:"data_b" binding:"required"`
+
+	Source            string `form:"source" binding:"required"`
+	Destination       string `form:"destination" binding:"required"`
+	MaxFlightsInRoute int    `form:"max_flights_in_route"`
 }
 
 //Timestamp time.Time with unmarshal 2006-01-02T1504 support
@@ -36,19 +53,23 @@ func (t *Timestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 //Flight information
 type Flight struct {
 	Carrier struct {
-		Name string `xml:",chardata" json:"name"`
-		ID   string `xml:"id,attr"  json:"id"`
-	} `xml:"Carrier"  json:"carrier"`
-	FlightNumber       string    `xml:"FlightNumber"  json:"flightNumber"`
-	Source             string    `xml:"Source"  json:"source"`
-	Destination        string    `xml:"Destination"  json:"destination"`
-	DepartureTimeStamp Timestamp `xml:"DepartureTimeStamp"  json:"departureTimeStamp"`
-	ArrivalTimeStamp   Timestamp `xml:"ArrivalTimeStamp"  json:"arrivalTimeStamp"`
-	Class              string    `xml:"Class"  json:"class"`
-	NumberOfStops      int       `xml:"NumberOfStops"  json:"numberOfStops"`
-	FareBasis          string    `xml:"FareBasis"  json:"fareBasis"`
-	WarningText        string    `xml:"WarningText"  json:"warningText"`
-	TicketType         string    `xml:"TicketType"  json:"ticketType"`
+		Name string `xml:",chardata" json:"name" diff:"name"`
+		ID   string `xml:"id,attr" json:"id" diff:"id"`
+	} `xml:"Carrier" json:"carrier" diff:"carrier"`
+	FlightNumber       string    `xml:"FlightNumber" json:"flightNumber" diff:"flightNumber"`
+	Source             string    `xml:"Source" json:"source" diff:"source"`
+	Destination        string    `xml:"Destination" json:"destination" diff:"destination"`
+	DepartureTimeStamp Timestamp `xml:"DepartureTimeStamp" json:"departureTimeStamp" diff:"departureTimeStamp"`
+	ArrivalTimeStamp   Timestamp `xml:"ArrivalTimeStamp" json:"arrivalTimeStamp" diff:"arrivalTimeStamp"`
+	Class              string    `xml:"Class" json:"class" diff:"class"`
+	NumberOfStops      int       `xml:"NumberOfStops" json:"numberOfStops" diff:"numberOfStops"`
+	FareBasis          string    `xml:"FareBasis" json:"fareBasis" diff:"fareBasis"`
+	WarningText        string    `xml:"WarningText" json:"warningText" diff:"warningText"`
+	TicketType         string    `xml:"TicketType" json:"ticketType"  diff:"ticketType"`
+}
+
+func (f *Flight) Key() string {
+	return fmt.Sprintf("%s:%s:%s:%s", f.Carrier.Name, f.FlightNumber, f.DepartureTimeStamp.Format("01-02-2006"), f.FareBasis)
 }
 
 //Flights accessory structure
@@ -63,12 +84,12 @@ type PricedItinerary struct {
 
 //Pricing accessory structure
 type Pricing struct {
-	Currency       string `xml:"currency,attr"  json:"currency"`
+	Currency       string `xml:"currency,attr"  json:"currency" diff:"currency"`
 	ServiceCharges []struct {
-		Amount     float32 `xml:",chardata"  json:"amount"`
-		Type       string  `xml:"type,attr"  json:"type"`
-		ChargeType string  `xml:"ChargeType,attr"  json:"chargeType"`
-	} `xml:"ServiceCharges"  json:"serviceCharges"`
+		Amount     float32 `xml:",chardata"  json:"amount" diff:"amount"`
+		Type       string  `xml:"type,attr"  json:"type" diff:"type"`
+		ChargeType string  `xml:"ChargeType,attr"  json:"chargeType" diff:"chargeType"`
+	} `xml:"ServiceCharges"  json:"serviceCharges" diff:"serviceCharges"`
 }
 
 //GetTotalAmount returns total flight cost
@@ -77,7 +98,7 @@ func (p *Pricing) GetTotalAmount() (amount float32, ok bool) {
 		return
 	}
 	for _, charge := range p.ServiceCharges {
-		if charge.ChargeType == "TotalAmount" { //TBD: currency issues
+		if charge.ChargeType == "TotalAmount" && charge.Type == "SingleAdult" { //TBD: currency issues
 			return charge.Amount, true
 		}
 	}
@@ -104,13 +125,21 @@ const TransferTimeInMinutes = 60
 
 //Route is a list of FlightItem
 type Route struct {
-	Flights []*FlightItem `json:"flights"`
+	Flights []*FlightItem `json:"flights" diff:"flights"`
+}
+
+//Key returns Route's Flights composite key
+func (r *Route) Key() (key string) {
+	for _, f := range r.Flights {
+		key = fmt.Sprintf("%s:%s", key, f.Flight.Key())
+	}
+	return
 }
 
 //FlightItem stores info about Flight and it's Pricing
 type FlightItem struct {
-	Flight  *Flight  `json:"flight"`
-	Pricing *Pricing `json:"pricing"`
+	Flight  *Flight  `json:"flight" diff:"flight"`
+	Pricing *Pricing `json:"pricing" diff:"pricing"`
 }
 
 //IsAccessibleFrom detects if flight is available due arrival and departure time

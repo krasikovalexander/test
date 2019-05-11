@@ -62,6 +62,12 @@
   version = "v0.8.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/r3labs/diff"
+  packages = ["."]
+  revision = "10f39a916ff7359dac8be97962d98156ed88fcd6"
+
+[[projects]]
   name = "github.com/ugorji/go"
   packages = ["codec"]
   revision = "2adff0894ba3bc2eeb9f9aea45fefd49802e1a13"
@@ -88,6 +94,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2a9f3ca8a9facd5096ac1a2f9a7d44ef3675869ee15579a40c3f5b9cd75ea951"
+  inputs-digest = "8212aa0e1e4270f4d832485d1f18e460d78eed93f4c501d1a90e43e45922bb98"
   solver-name = "gps-cdcl"
   solver-version = 1
