@@ -43,19 +43,19 @@ func (t *Timestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 //Flight information
 type Flight struct {
 	Carrier struct {
-		Name string `xml:",chardata" json:"name"`
-		ID   string `xml:"id,attr"  json:"id"`
-	} `xml:"Carrier"  json:"carrier"`
-	FlightNumber       string    `xml:"FlightNumber"  json:"flightNumber"`
-	Source             string    `xml:"Source"  json:"source"`
-	Destination        string    `xml:"Destination"  json:"destination"`
-	DepartureTimeStamp Timestamp `xml:"DepartureTimeStamp"  json:"departureTimeStamp"`
-	ArrivalTimeStamp   Timestamp `xml:"ArrivalTimeStamp"  json:"arrivalTimeStamp"`
-	Class              string    `xml:"Class"  json:"class"`
-	NumberOfStops      int       `xml:"NumberOfStops"  json:"numberOfStops"`
-	FareBasis          string    `xml:"FareBasis"  json:"fareBasis"`
-	WarningText        string    `xml:"WarningText"  json:"warningText"`
-	TicketType         string    `xml:"TicketType"  json:"ticketType"`
+		Name string `xml:",chardata" json:"name" diff:"name"`
+		ID   string `xml:"id,attr" json:"id" diff:"id"`
+	} `xml:"Carrier" json:"carrier" diff:"carrier"`
+	FlightNumber       string    `xml:"FlightNumber" json:"flightNumber" diff:"flightNumber"`
+	Source             string    `xml:"Source" json:"source" diff:"source"`
+	Destination        string    `xml:"Destination" json:"destination" diff:"destination"`
+	DepartureTimeStamp Timestamp `xml:"DepartureTimeStamp" json:"departureTimeStamp" diff:"departureTimeStamp"`
+	ArrivalTimeStamp   Timestamp `xml:"ArrivalTimeStamp" json:"arrivalTimeStamp" diff:"arrivalTimeStamp"`
+	Class              string    `xml:"Class" json:"class" diff:"class"`
+	NumberOfStops      int       `xml:"NumberOfStops" json:"numberOfStops" diff:"numberOfStops"`
+	FareBasis          string    `xml:"FareBasis" json:"fareBasis" diff:"fareBasis"`
+	WarningText        string    `xml:"WarningText" json:"warningText" diff:"warningText"`
+	TicketType         string    `xml:"TicketType" json:"ticketType"  diff:"ticketType"`
 }
 
 func (f *Flight) Key() string {
@@ -74,12 +74,12 @@ type PricedItinerary struct {
 
 //Pricing accessory structure
 type Pricing struct {
-	Currency       string `xml:"currency,attr"  json:"currency"`
+	Currency       string `xml:"currency,attr"  json:"currency" diff:"currency"`
 	ServiceCharges []struct {
-		Amount     float32 `xml:",chardata"  json:"amount"`
-		Type       string  `xml:"type,attr"  json:"type"`
-		ChargeType string  `xml:"ChargeType,attr"  json:"chargeType"`
-	} `xml:"ServiceCharges"  json:"serviceCharges"`
+		Amount     float32 `xml:",chardata"  json:"amount" diff:"amount"`
+		Type       string  `xml:"type,attr"  json:"type" diff:"type"`
+		ChargeType string  `xml:"ChargeType,attr"  json:"chargeType" diff:"chargeType"`
+	} `xml:"ServiceCharges"  json:"serviceCharges" diff:"serviceCharges"`
 }
 
 //GetTotalAmount returns total flight cost
@@ -120,8 +120,8 @@ type Route struct {
 
 //FlightItem stores info about Flight and it's Pricing
 type FlightItem struct {
-	Flight  *Flight  `json:"flight"`
-	Pricing *Pricing `json:"pricing"`
+	Flight  *Flight  `json:"flight" diff:"flight"`
+	Pricing *Pricing `json:"pricing" diff:"pricing"`
 }
 
 //IsAccessibleFrom detects if flight is available due arrival and departure time
