@@ -64,7 +64,9 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 		defer wgWorkers.Done()
 		for compare := range jobs {
 			changelog, _ := diff.Diff(compare.flightA, compare.flightB)
-			updates <- FlightUpdate{compare.flightA, changelog}
+			if len(changelog) > 0 {
+				updates <- FlightUpdate{compare.flightA, changelog}
+			}
 		}
 	}
 
@@ -74,11 +76,7 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 
 	for _, flightA := range flightsA.flightItems {
 		if flightB, exist := flightsB.flightItems[flightA.Flight.Key()]; exist {
-			priceA, _ := flightA.Pricing.GetTotalAmount()
-			priceB, _ := flightB.Pricing.GetTotalAmount()
-			if *flightA.Flight != *flightB.Flight || priceA != priceB {
-				jobs <- comparePair{flightA, flightB}
-			}
+			jobs <- comparePair{flightA, flightB}
 		} else {
 			removals = append(removals, flightA)
 		}

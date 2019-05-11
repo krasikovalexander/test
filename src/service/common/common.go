@@ -22,6 +22,16 @@ type CompareDataRequest struct {
 	DataB *multipart.FileHeader `form:"data_b" binding:"required"`
 }
 
+//CompareRoutesDataRequest is a multipart/form-data binding
+type CompareRoutesDataRequest struct {
+	DataA *multipart.FileHeader `form:"data_a" binding:"required"`
+	DataB *multipart.FileHeader `form:"data_b" binding:"required"`
+
+	Source            string `form:"source" binding:"required"`
+	Destination       string `form:"destination" binding:"required"`
+	MaxFlightsInRoute int    `form:"max_flights_in_route"`
+}
+
 //Timestamp time.Time with unmarshal 2006-01-02T1504 support
 type Timestamp struct {
 	time.Time
@@ -115,7 +125,15 @@ const TransferTimeInMinutes = 60
 
 //Route is a list of FlightItem
 type Route struct {
-	Flights []*FlightItem `json:"flights"`
+	Flights []*FlightItem `json:"flights" diff:"flights"`
+}
+
+//Key returns Route's Flights composite key
+func (r *Route) Key() (key string) {
+	for _, f := range r.Flights {
+		key = fmt.Sprintf("%s:%s", key, f.Flight.Key())
+	}
+	return
 }
 
 //FlightItem stores info about Flight and it's Pricing
