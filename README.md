@@ -23,3 +23,32 @@ destination           string
 
 max_flights_in_route  int [optional]
 
+
+
+POST http://localhost:3000/compare
+
+Content-Type: multipart/form-data
+
+
+
+data_a                  xml file
+
+data_b                  xml file
+
+
+
+POST http://localhost:3000/compare/routes
+
+Content-Type: multipart/form-data
+
+
+
+data_a                xml file
+
+data_b                xml file
+
+source                string
+
+destination           string
+
+max_flights_in_route  int [optional]
