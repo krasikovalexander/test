@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/xml"
+	"fmt"
 	"mime/multipart"
 	"service/common/graph"
 	"time"
@@ -13,6 +14,12 @@ type SingleDataRequest struct {
 	Source            string                `form:"source" binding:"required"`
 	Destination       string                `form:"destination" binding:"required"`
 	MaxFlightsInRoute int                   `form:"max_flights_in_route"`
+}
+
+//CompareDataRequest is a multipart/form-data binding
+type CompareDataRequest struct {
+	DataA *multipart.FileHeader `form:"data_a" binding:"required"`
+	DataB *multipart.FileHeader `form:"data_b" binding:"required"`
 }
 
 //Timestamp time.Time with unmarshal 2006-01-02T1504 support
@@ -51,6 +58,10 @@ type Flight struct {
 	TicketType         string    `xml:"TicketType"  json:"ticketType"`
 }
 
+func (f *Flight) Key() string {
+	return fmt.Sprintf("%s:%s:%s:%s", f.Carrier.Name, f.FlightNumber, f.DepartureTimeStamp.Format("01-02-2006"), f.FareBasis)
+}
+
 //Flights accessory structure
 type Flights struct {
 	Flight []Flight `xml:"Flight"`
@@ -77,7 +88,7 @@ func (p *Pricing) GetTotalAmount() (amount float32, ok bool) {
 		return
 	}
 	for _, charge := range p.ServiceCharges {
-		if charge.ChargeType == "TotalAmount" { //TBD: currency issues
+		if charge.ChargeType == "TotalAmount" && charge.Type == "SingleAdult" { //TBD: currency issues
 			return charge.Amount, true
 		}
 	}
