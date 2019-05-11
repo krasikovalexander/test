@@ -1,9 +1,7 @@
 package common
 
 import (
-	"log"
 	"sync"
-	"time"
 
 	"github.com/r3labs/diff"
 )
@@ -45,7 +43,7 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 		flightA FlightItem
 		flightB FlightItem
 	}
-	start := time.Now()
+
 	jobs := make(chan comparePair)
 	updates := make(chan FlightUpdate)
 
@@ -75,7 +73,9 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 
 	for _, flightA := range flightsA.flightItems {
 		if flightB, exist := flightsB.flightItems[flightA.Flight.Key()]; exist {
-			if *flightA.Flight != *flightB.Flight {
+			priceA, _ := flightA.Pricing.GetTotalAmount()
+			priceB, _ := flightB.Pricing.GetTotalAmount()
+			if *flightA.Flight != *flightB.Flight || priceA != priceB {
 				jobs <- comparePair{flightA, flightB}
 			}
 		} else {
@@ -86,8 +86,6 @@ func (flightsB *FlightsList) Diff(flightsA *FlightsList) (additions []FlightItem
 	wgWorkers.Wait()
 	close(updates)
 	wgResults.Wait()
-
-	log.Printf("WorkersCount %d took %s", WorkersCount, time.Since(start))
 
 	for _, flightB := range flightsB.flightItems {
 		if _, exist := flightsA.flightItems[flightB.Flight.Key()]; !exist {
